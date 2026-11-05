@@ -29,8 +29,8 @@ export function Nav() {
             className="rounded-sm"
             priority
           />
-          <span className="font-display font-bold uppercase tracking-tight text-foreground">
-            SRM <span className="text-accent">Portal</span>
+          <span className="font-display font-bold uppercase tracking-tight text-foreground whitespace-nowrap">
+            Sim Racing <span className="text-accent">Morocco</span>
           </span>
         </Link>
 
