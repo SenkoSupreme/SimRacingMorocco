@@ -1,0 +1,98 @@
+// SRM Portal data model.
+//
+// Dev default is SQLite (zero setup). Before deploying, swap to Supabase:
+//   1. provider = "postgresql"
+//   2. DATABASE_URL = your Supabase connection string (see README)
+//   3. rm -rf prisma/migrations && npx prisma migrate dev --name init
+//   4. npx prisma db seed
+//
+// Everything here is read-only from the app's point of view: the only writer
+// is the ingestion sync job (lib/ingestion) and the seed script. No admin UI,
+// no user-facing writes, by design (see design-doc-portal.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7: connection URL lives in prisma.config.ts / the adapter passed to
+// PrismaClient (see lib/db.ts), not here.
+datasource db {
+  provider = "sqlite"
+}
+
+enum EventStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum SyncStatus {
+  SUCCESS
+  ERROR
+}
+
+model Member {
+  id          String   @id @default(cuid())
+  discordId   String   @unique
+  displayName String
+  avatarUrl   String?
+  joinedAt    DateTime @default(now())
+  lastSeenAt  DateTime?
+  isActive    Boolean  @default(true)
+
+  results Result[]
+
+  @@index([lastSeenAt])
+}
+
+model Sim {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  events Event[]
+}
+
+model Event {
+  id             String      @id @default(cuid())
+  sim            Sim         @relation(fields: [simId], references: [id])
+  simId          String
+  title          String
+  trackName      String?
+  startAt        DateTime
+  status         EventStatus @default(SCHEDULED)
+  // Discord event/message id this was ingested from, for dedupe on re-sync.
+  sourceEventId  String?     @unique
+
+  results Result[]
+
+  @@index([startAt])
+  @@index([simId])
+}
+
+model Result {
+  id          String   @id @default(cuid())
+  event       Event    @relation(fields: [eventId], references: [id])
+  eventId     String
+  member      Member   @relation(fields: [memberId], references: [id])
+  memberId    String
+  position    Int
+  points      Int      @default(0)
+  fastestLap  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@unique([eventId, memberId])
+  @@index([memberId])
+}
+
+// One row per ingestion run — powers the "last updated" / staleness indicator
+// on the dashboard instead of failing silently or crashing the page.
+model SyncLog {
+  id            String     @id @default(cuid())
+  source        String
+  startedAt     DateTime   @default(now())
+  finishedAt    DateTime?
+  status        SyncStatus?
+  recordsSynced Int        @default(0)
+  errorMessage  String?
+}
