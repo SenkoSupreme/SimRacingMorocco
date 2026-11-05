@@ -4,22 +4,23 @@ import { getOverview } from "@/lib/data/overview";
 import { StatCard } from "@/components/stat-card";
 import { SyncStatus } from "@/components/sync-status";
 import { Reveal } from "@/components/reveal";
+import { PageBanner } from "@/components/page-banner";
 import { UsersIcon, PulseIcon, CalendarIcon, TrophyIcon } from "@/components/icons";
+import cockpitImage from "@/public/images/cockpit.webp";
 
 export default function Page() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold uppercase tracking-tight">
-          Community Overview
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          Sim Racing Morocco — live snapshot of members, events, and recent results.
-        </p>
+    <div>
+      <PageBanner
+        image={cockpitImage}
+        title="Community Overview"
+        subtitle="Sim Racing Morocco — live snapshot of members, events, and recent results."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <Suspense fallback={<OverviewSkeleton />}>
+          <Overview />
+        </Suspense>
       </div>
-      <Suspense fallback={<OverviewSkeleton />}>
-        <Overview />
-      </Suspense>
     </div>
   );
 }

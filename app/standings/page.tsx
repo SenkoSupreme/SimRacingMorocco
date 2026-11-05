@@ -1,21 +1,22 @@
 import { Suspense } from "react";
 import { getStandings } from "@/lib/data/standings";
 import { Reveal } from "@/components/reveal";
+import { PageBanner } from "@/components/page-banner";
+import porscheAction from "@/public/images/gt3-porsche-action.webp";
 
 export default function StandingsPage() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-bold uppercase tracking-tight">
-          Standings
-        </h1>
-        <p className="text-sm text-muted mt-1">
-          Across all completed events. Ratios matter as much as points.
-        </p>
+    <div>
+      <PageBanner
+        image={porscheAction}
+        title="Standings"
+        subtitle="Across all completed events. Ratios matter as much as points."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        <Suspense fallback={<StandingsSkeleton />}>
+          <Standings />
+        </Suspense>
       </div>
-      <Suspense fallback={<StandingsSkeleton />}>
-        <Standings />
-      </Suspense>
     </div>
   );
 }

@@ -58,3 +58,14 @@ DB directly.
 Dashboard renders against seeded fake data. Real data depends on
 `discordBotSource` being implemented once Person A's bot access is in hand —
 see "The Assignment" in the design doc.
+
+## Image licensing (unverified — fix before any real launch)
+
+`public/images/gt3-porsche-action.webp`, `gt3-bmw-action.webp`, and
+`e30-convoy.webp` are in-sim screenshots showing real motorsport liveries and
+sponsor branding (Porsche, BMW M Motorsport/WRT, Goodyear, etc.). Their
+source/license is unverified, and using real team branding on a public site
+risks reading as an implied endorsement that doesn't exist. `cockpit.webp` is
+lower-risk (no visible branding) but its license is also unverified. Replace
+with confirmed-licensed or brand-neutral images before this goes to a real
+domain, press contact, or sponsor conversation.

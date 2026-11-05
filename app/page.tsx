@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { getLandingStats, getFeaturedUpcomingEvents } from "@/lib/data/landing";
@@ -7,6 +8,10 @@ import { CapabilityCard } from "@/components/capability-card";
 import { Reveal } from "@/components/reveal";
 import { FlagIcon, TrophyIcon, UsersIcon, CalendarIcon, PulseIcon } from "@/components/icons";
 import { DISCORD_URL } from "@/lib/constants";
+import cockpitImage from "@/public/images/cockpit.webp";
+import porscheAction from "@/public/images/gt3-porsche-action.webp";
+import bmwAction from "@/public/images/gt3-bmw-action.webp";
+import e30Convoy from "@/public/images/e30-convoy.webp";
 
 export default function LandingPage() {
   return (
@@ -27,6 +32,19 @@ export default function LandingPage() {
 function Hero() {
   return (
     <section className="pitwall-grid relative overflow-hidden px-4 sm:px-6 pt-16 pb-20">
+      {/* Cockpit photo, heavily darkened so it reads as atmosphere, not a
+          competing focal point — the headline still has to win. */}
+      <div className="absolute inset-0">
+        <Image
+          src={cockpitImage}
+          alt=""
+          fill
+          priority
+          className="object-cover object-[30%_30%] opacity-45"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/60" />
+      </div>
       {/* Radial glow behind the headline, echoing the logo's accent red */}
       <div
         className="pointer-events-none absolute left-1/4 top-0 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full opacity-25 blur-3xl"
@@ -189,7 +207,13 @@ function Capabilities() {
         </Reveal>
         <div className="grid sm:grid-cols-3 gap-4">
           <Reveal>
-            <CapabilityCard index="01" label="EVENTS" title="Races every week" icon={<FlagIcon />}>
+            <CapabilityCard
+              index="01"
+              label="EVENTS"
+              title="Races every week"
+              icon={<FlagIcon />}
+              image={bmwAction}
+            >
               Assetto Corsa and Le Mans Ultimate events, organized by the
               community through Discord.
             </CapabilityCard>
@@ -201,6 +225,7 @@ function Capabilities() {
               title="Transparent results"
               icon={<TrophyIcon />}
               accent="positive"
+              image={porscheAction}
             >
               Every result feeds public standings — wins, podiums, and
               consistency, not just a scoreboard.
@@ -213,6 +238,7 @@ function Capabilities() {
               title="Morocco's grid"
               icon={<UsersIcon />}
               accent="foreground"
+              image={e30Convoy}
             >
               Open to any Moroccan sim racer, from first lap to podium regular.
             </CapabilityCard>

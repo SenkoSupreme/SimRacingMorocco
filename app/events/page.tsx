@@ -2,20 +2,23 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { getUpcomingEvents, getPastEvents } from "@/lib/data/events";
 import { Reveal } from "@/components/reveal";
+import { PageBanner } from "@/components/page-banner";
 import { CalendarIcon, FlagIcon } from "@/components/icons";
+import e30Convoy from "@/public/images/e30-convoy.webp";
 
 export default function EventsPage() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold uppercase tracking-tight">
-          Events
-        </h1>
-        <p className="text-sm text-muted mt-1">Upcoming and past community races.</p>
+    <div>
+      <PageBanner
+        image={e30Convoy}
+        title="Events"
+        subtitle="Upcoming and past community races."
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <Suspense fallback={<EventsSkeleton />}>
+          <Events />
+        </Suspense>
       </div>
-      <Suspense fallback={<EventsSkeleton />}>
-        <Events />
-      </Suspense>
     </div>
   );
 }
