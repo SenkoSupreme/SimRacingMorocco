@@ -3,6 +3,7 @@
 /* Dark, data-forward theme — matches the broadcast-style look common
    across sim racing/motorsport stats sites (SimGrid, F1-style dashboards). */
 :root {
+  color-scheme: dark;
   --background: #0a0b0d;
   --surface: #14161a;
   --surface-raised: #1b1e24;

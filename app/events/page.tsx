@@ -4,7 +4,7 @@ import { getUpcomingEvents, getPastEvents } from "@/lib/data/events";
 
 export default function EventsPage() {
   return (
-    <div className="space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Events</h1>
         <p className="text-sm text-muted mt-1">Upcoming and past community races.</p>

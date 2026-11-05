@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
 import "./globals.css";
@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "Sim Racing Morocco — community dashboards and standings.",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0a0b0d",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -26,9 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Nav />
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
-          {children}
-        </main>
+        <main className="flex-1 w-full">{children}</main>
         <footer className="border-t border-border py-6 text-center text-xs text-muted">
           Sim Racing Morocco
         </footer>
