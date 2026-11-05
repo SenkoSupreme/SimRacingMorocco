@@ -1,12 +1,16 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getUpcomingEvents, getPastEvents } from "@/lib/data/events";
+import { Reveal } from "@/components/reveal";
+import { CalendarIcon, FlagIcon } from "@/components/icons";
 
 export default function EventsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Events</h1>
+        <h1 className="font-display text-3xl font-bold uppercase tracking-tight">
+          Events
+        </h1>
         <p className="text-sm text-muted mt-1">Upcoming and past community races.</p>
       </div>
       <Suspense fallback={<EventsSkeleton />}>
@@ -24,8 +28,18 @@ async function Events() {
 
   return (
     <div className="space-y-8">
-      <EventList title="Upcoming" events={upcoming} emptyText="Nothing scheduled yet." />
-      <EventList title="Past" events={past} emptyText="No past events recorded yet." />
+      <EventList
+        title="Upcoming"
+        events={upcoming}
+        emptyText="Nothing scheduled yet."
+        icon={<CalendarIcon className="text-accent shrink-0" />}
+      />
+      <EventList
+        title="Past"
+        events={past}
+        emptyText="No past events recorded yet."
+        icon={<FlagIcon className="text-muted shrink-0" />}
+      />
     </div>
   );
 }
@@ -43,10 +57,12 @@ function EventList({
   title,
   events,
   emptyText,
+  icon,
 }: {
   title: string;
   events: EventRow[];
   emptyText: string;
+  icon: React.ReactNode;
 }) {
   return (
     <section>
@@ -56,27 +72,35 @@ function EventList({
       {events.length === 0 ? (
         <p className="text-sm text-muted">{emptyText}</p>
       ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
-          {events.map((event) => (
-            <li key={event.id} className="px-4 py-3 flex items-center justify-between">
-              <div>
-                <div className="font-medium">{event.title}</div>
-                <div className="text-xs text-muted">
-                  {event.sim.name}
-                  {event.trackName ? ` — ${event.trackName}` : ""}
-                  {event.results.length > 0 ? ` — ${event.results.length} entrants` : ""}
+        <Reveal>
+          <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+            {events.map((event) => (
+              <li
+                key={event.id}
+                className="px-4 py-3 flex items-center justify-between gap-4 transition-colors hover:bg-surface-raised"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {icon}
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-xs text-muted truncate">
+                      {event.sim.name}
+                      {event.trackName ? ` — ${event.trackName}` : ""}
+                      {event.results.length > 0 ? ` — ${event.results.length} entrants` : ""}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-sm text-muted">
-                {event.startAt.toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </div>
-            </li>
-          ))}
-        </ul>
+                <div className="text-sm text-muted tabular-nums shrink-0">
+                  {event.startAt.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
       )}
     </section>
   );

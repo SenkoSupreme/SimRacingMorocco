@@ -29,7 +29,7 @@ export function Nav() {
             className="rounded-sm"
             priority
           />
-          <span className="font-bold tracking-tight text-foreground">
+          <span className="font-display font-bold uppercase tracking-tight text-foreground">
             SRM <span className="text-accent">Portal</span>
           </span>
         </Link>
@@ -43,7 +43,7 @@ export function Nav() {
           ))}
           <Link
             href={DISCORD_URL}
-            className="ml-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-accent-foreground hover:brightness-110 transition-[filter]"
+            className="ml-2 rounded-md bg-accent px-3.5 py-2 text-sm font-semibold text-accent-foreground hover:brightness-110 transition-transform active:scale-95"
           >
             Join Discord
           </Link>

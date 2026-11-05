@@ -3,12 +3,16 @@ import { connection } from "next/server";
 import { getOverview } from "@/lib/data/overview";
 import { StatCard } from "@/components/stat-card";
 import { SyncStatus } from "@/components/sync-status";
+import { Reveal } from "@/components/reveal";
+import { UsersIcon, PulseIcon, CalendarIcon, TrophyIcon } from "@/components/icons";
 
 export default function Page() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Community Overview</h1>
+        <h1 className="font-display text-3xl font-bold uppercase tracking-tight">
+          Community Overview
+        </h1>
         <p className="text-sm text-muted mt-1">
           Sim Racing Morocco — live snapshot of members, events, and recent results.
         </p>
@@ -32,13 +36,26 @@ async function Overview() {
       <SyncStatus lastSyncAt={overview.lastSyncAt} />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <StatCard label="Members" value={overview.memberCount} />
-        <StatCard
-          label="Active members"
-          value={overview.activeMemberCount}
-          sub={`last ${overview.activeWindowDays} days`}
-        />
-        <StatCard label="Upcoming events" value={overview.upcomingEvents.length} />
+        <Reveal>
+          <StatCard label="Members" value={overview.memberCount} icon={<UsersIcon />} />
+        </Reveal>
+        <Reveal delayMs={80}>
+          <StatCard
+            label="Active members"
+            value={overview.activeMemberCount}
+            sub={`last ${overview.activeWindowDays} days`}
+            icon={<PulseIcon />}
+            accent="positive"
+          />
+        </Reveal>
+        <Reveal delayMs={160}>
+          <StatCard
+            label="Upcoming events"
+            value={overview.upcomingEvents.length}
+            icon={<CalendarIcon />}
+            accent="foreground"
+          />
+        </Reveal>
       </div>
 
       <section>
@@ -50,15 +67,21 @@ async function Overview() {
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
             {overview.upcomingEvents.map((event) => (
-              <li key={event.id} className="px-4 py-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{event.title}</div>
-                  <div className="text-xs text-muted">
-                    {event.sim.name}
-                    {event.trackName ? ` — ${event.trackName}` : ""}
+              <li
+                key={event.id}
+                className="px-4 py-3 flex items-center justify-between transition-colors hover:bg-surface-raised"
+              >
+                <div className="flex items-center gap-3">
+                  <CalendarIcon className="text-muted shrink-0" />
+                  <div>
+                    <div className="font-medium">{event.title}</div>
+                    <div className="text-xs text-muted">
+                      {event.sim.name}
+                      {event.trackName ? ` — ${event.trackName}` : ""}
+                    </div>
                   </div>
                 </div>
-                <div className="text-sm text-muted">
+                <div className="text-sm text-muted tabular-nums">
                   {event.startAt.toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -79,14 +102,20 @@ async function Overview() {
         ) : (
           <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
             {overview.recentResults.map((result) => (
-              <li key={result.id} className="px-4 py-3 flex items-center justify-between">
-                <div>
-                  <span className="font-medium">{result.member.displayName}</span>
-                  <span className="text-muted"> finished P{result.position} in </span>
-                  <span>{result.event.title}</span>
+              <li
+                key={result.id}
+                className="px-4 py-3 flex items-center justify-between transition-colors hover:bg-surface-raised"
+              >
+                <div className="flex items-center gap-3">
+                  <TrophyIcon className="text-muted shrink-0" />
+                  <div>
+                    <span className="font-medium">{result.member.displayName}</span>
+                    <span className="text-muted"> finished P{result.position} in </span>
+                    <span>{result.event.title}</span>
+                  </div>
                 </div>
                 {result.fastestLap && (
-                  <span className="text-xs text-accent font-medium">Fastest lap</span>
+                  <span className="text-xs text-accent font-medium shrink-0">Fastest lap</span>
                 )}
               </li>
             ))}
