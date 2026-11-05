@@ -103,7 +103,38 @@ structural change (new files, renamed exports, moved routes).
 - `images/gt3-porsche-action.webp` — "Standings" capability card + `/standings` banner.
 - `images/gt3-bmw-action.webp` — "Events" capability card.
 - `images/e30-convoy.webp` — "Community" capability card + `/events` banner.
-  (Licensing unverified on the last three — see README "Image licensing".)
+  **Licensing unverified on the last three** — they're in-sim screenshots
+  showing real Porsche/BMW M Motorsport/WRT/Goodyear liveries and sponsor
+  branding. Source/license unverified; using real team branding publicly
+  risks reading as an implied endorsement that doesn't exist. `cockpit.webp`
+  is lower-risk (no visible branding) but also unverified. Replace with
+  confirmed-licensed or brand-neutral images before a real domain, press
+  contact, or sponsor conversation.
+
+## Development
+
+```bash
+npm install
+npm run db:migrate   # applies prisma/migrations against local dev.db
+npm run db:seed      # fills it with fake members/events/results
+npm run dev
+```
+
+Open http://localhost:3000. `npm run db:studio` opens Prisma Studio to
+browse/edit the local DB directly.
+
+### Moving to Supabase before deploy
+
+1. Create a free Supabase project, grab its Postgres connection string
+   (Project Settings → Database → Connection string → URI).
+2. In `prisma/schema.prisma`, change the datasource to
+   `provider = "postgresql"`.
+3. In `.env`, set `DATABASE_URL` to the Supabase connection string.
+4. In `lib/db.ts` and `prisma/seed.ts`, swap `PrismaBetterSqlite3` for the
+   Postgres adapter (`@prisma/adapter-pg` or similar) — same pattern, new
+   adapter.
+5. `rm -rf prisma/migrations && npx prisma migrate dev --name init`
+6. `npm run db:seed` (or wait for the real sync once bot access lands).
 
 ## Known gaps
 
@@ -111,3 +142,6 @@ structural change (new files, renamed exports, moved routes).
   Person A's bot access.
 - `lib/constants.ts`'s `DISCORD_URL` is a placeholder.
 - No test suite yet.
+- Dashboard currently renders against seeded fake data (see `prisma/seed.ts`);
+  real data depends on `discordBotSource` — see "The Assignment" in
+  `../design-doc-portal.md`.
