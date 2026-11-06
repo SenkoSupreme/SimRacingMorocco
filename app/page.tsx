@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
-import { getLandingStats, getFeaturedUpcomingEvents } from "@/lib/data/landing";
+import { getLandingStats } from "@/lib/data/landing";
 import { getOverview } from "@/lib/data/overview";
 import { getStandings } from "@/lib/data/standings";
 import { getUpcomingEvents, getPastEvents } from "@/lib/data/events";
@@ -32,14 +32,14 @@ export default function LandingPage() {
         <Stats />
       </Suspense>
       <Capabilities />
+      <Suspense fallback={<EventsSkeleton />}>
+        <Events />
+      </Suspense>
       <Suspense fallback={<OverviewSkeleton />}>
         <Overview />
       </Suspense>
       <Suspense fallback={<StandingsSkeleton />}>
         <Standings />
-      </Suspense>
-      <Suspense fallback={<EventsSkeleton />}>
-        <Events />
       </Suspense>
       <ClosingCta />
     </div>
@@ -205,6 +205,114 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
   );
 }
 
+type EventRow = {
+  id: string;
+  title: string;
+  trackName: string | null;
+  startAt: Date;
+  sim: { name: string };
+  results: { id: string }[];
+};
+
+async function Events() {
+  // "Upcoming" is relative to request time, so this section renders at
+  // request time rather than being cached — see the Overview comment below.
+  await connection();
+  const [upcoming, past] = await Promise.all([getUpcomingEvents(), getPastEvents()]);
+
+  return (
+    <section id="events" className="scroll-mt-20 px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto space-y-10">
+        <SectionHeader title="Events" subtitle="Upcoming and past community races." />
+        <EventList
+          title="Upcoming"
+          events={upcoming}
+          emptyText="Nothing scheduled yet."
+          variant="upcoming"
+        />
+        <EventList
+          title="Past"
+          events={past}
+          emptyText="No past events recorded yet."
+          variant="past"
+        />
+      </div>
+    </section>
+  );
+}
+
+function EventList({
+  title,
+  events,
+  emptyText,
+  variant,
+}: {
+  title: string;
+  events: EventRow[];
+  emptyText: string;
+  variant: "upcoming" | "past";
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">{title}</h3>
+      {events.length === 0 ? (
+        <p className="text-sm text-muted">{emptyText}</p>
+      ) : (
+        <div className="grid sm:grid-cols-3 gap-4">
+          {events.map((event, i) => (
+            <Reveal key={event.id} delayMs={i * 80}>
+              <EventCard event={event} variant={variant} />
+            </Reveal>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventCard({ event, variant }: { event: EventRow; variant: "upcoming" | "past" }) {
+  const isUpcoming = variant === "upcoming";
+  return (
+    <div className="group relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 motion-safe:hover:shadow-[0_12px_40px_-14px_rgba(0,0,0,0.7)]">
+      <div
+        className={`absolute inset-x-0 top-0 h-0.5 ${isUpcoming ? "bg-accent" : "bg-foreground/40"} scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}
+      />
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wide text-muted">{event.sim.name}</div>
+        {isUpcoming ? (
+          <CalendarIcon className="text-accent opacity-70" />
+        ) : (
+          <FlagIcon className="text-muted opacity-70" />
+        )}
+      </div>
+      <div className="mt-2 font-display text-lg font-semibold">{event.title}</div>
+      {event.trackName && <div className="mt-1 text-sm text-muted">{event.trackName}</div>}
+      <div
+        className={`mt-4 text-sm font-medium tabular-nums ${isUpcoming ? "text-accent" : "text-muted"}`}
+      >
+        {event.startAt.toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+        {!isUpcoming && event.results.length > 0 && ` — ${event.results.length} entrants`}
+      </div>
+    </div>
+  );
+}
+
+function EventsSkeleton() {
+  return (
+    <section className="px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 animate-pulse">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-36 rounded-lg border border-border bg-surface" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 async function Overview() {
   // This data changes between requests (member activity is relative to
   // "now") and is cheap to compute, so render it at request time rather
@@ -213,7 +321,7 @@ async function Overview() {
   const overview = await getOverview();
 
   return (
-    <section id="overview" className="scroll-mt-20 px-4 sm:px-6 py-16">
+    <section id="overview" className="scroll-mt-20 px-4 sm:px-6 py-16 bg-surface/40">
       <div className="max-w-6xl mx-auto space-y-6">
         <SectionHeader
           title="Community Overview"
@@ -267,7 +375,7 @@ async function Overview() {
 
 function OverviewSkeleton() {
   return (
-    <section className="px-4 sm:px-6 py-16">
+    <section className="px-4 sm:px-6 py-16 bg-surface/40">
       <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
         <div className="h-3 w-40 bg-surface rounded" />
         <div className="h-24 w-64 rounded-lg border border-border bg-surface" />
@@ -281,7 +389,7 @@ async function Standings() {
   const rows = await getStandings();
 
   return (
-    <section id="standings" className="scroll-mt-20 px-4 sm:px-6 py-16 bg-surface/40">
+    <section id="standings" className="scroll-mt-20 px-4 sm:px-6 py-16">
       <div className="max-w-6xl mx-auto space-y-6">
         <SectionHeader
           title="Standings"
@@ -344,106 +452,8 @@ async function Standings() {
 
 function StandingsSkeleton() {
   return (
-    <section className="px-4 sm:px-6 py-16 bg-surface/40">
-      <div className="max-w-6xl mx-auto h-80 rounded-lg border border-border bg-surface animate-pulse" />
-    </section>
-  );
-}
-
-type EventRow = {
-  id: string;
-  title: string;
-  trackName: string | null;
-  startAt: Date;
-  sim: { name: string };
-  results: { id: string }[];
-};
-
-async function Events() {
-  // "Upcoming" is relative to request time, so this section renders at
-  // request time rather than being cached — see the Overview comment above.
-  await connection();
-  const [upcoming, past] = await Promise.all([getUpcomingEvents(), getPastEvents()]);
-
-  return (
-    <section id="events" className="scroll-mt-20 px-4 sm:px-6 py-16">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <SectionHeader title="Events" subtitle="Upcoming and past community races." />
-        <EventList
-          title="Upcoming"
-          events={upcoming}
-          emptyText="Nothing scheduled yet."
-          icon={<CalendarIcon className="text-accent shrink-0" />}
-        />
-        <EventList
-          title="Past"
-          events={past}
-          emptyText="No past events recorded yet."
-          icon={<FlagIcon className="text-muted shrink-0" />}
-        />
-      </div>
-    </section>
-  );
-}
-
-function EventList({
-  title,
-  events,
-  emptyText,
-  icon,
-}: {
-  title: string;
-  events: EventRow[];
-  emptyText: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div>
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">{title}</h3>
-      {events.length === 0 ? (
-        <p className="text-sm text-muted">{emptyText}</p>
-      ) : (
-        <Reveal>
-          <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="px-4 py-3 flex items-center justify-between gap-4 transition-colors hover:bg-surface-raised"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {icon}
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{event.title}</div>
-                    <div className="text-xs text-muted truncate">
-                      {event.sim.name}
-                      {event.trackName ? ` — ${event.trackName}` : ""}
-                      {event.results.length > 0 ? ` — ${event.results.length} entrants` : ""}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-muted tabular-nums shrink-0">
-                  {event.startAt.toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
-      )}
-    </div>
-  );
-}
-
-function EventsSkeleton() {
-  return (
     <section className="px-4 sm:px-6 py-16">
-      <div className="max-w-6xl mx-auto space-y-8 animate-pulse">
-        <div className="h-32 rounded-lg border border-border bg-surface" />
-        <div className="h-32 rounded-lg border border-border bg-surface" />
-      </div>
+      <div className="max-w-6xl mx-auto h-80 rounded-lg border border-border bg-surface animate-pulse" />
     </section>
   );
 }

@@ -11,18 +11,24 @@ structural change (new files, renamed exports, moved routes).
   loads Geist Sans/Mono + Rajdhani (`--font-display`) fonts, renders
   `<Nav/>` + footer. Also exports `metadata`, `viewport` (theme-color).
 - `app/page.tsx` — Everything lives on `/` now; the dashboards are sections
-  of this one page, not separate routes. Default `LandingPage()`. Internal:
+  of this one page, not separate routes. Render order: Hero → Stats →
+  Capabilities → **Events** → Overview → Standings → ClosingCta (Events sits
+  right under the "What SRM is" description, above the other two dashboard
+  sections — that ordering is deliberate, not alphabetical). Default
+  `LandingPage()`. Internal:
   - `Hero()` — cockpit bg image, live badge, headline, CTAs.
   - `Stats()` / `StatStripSkeleton()` — stat strip via `getLandingStats`.
   - `Capabilities()` — 3 `CapabilityCard`s ("What SRM is"), with images.
   - `SectionHeader()` — shared accent-bar + title + subtitle header, used
     by the three dashboard sections below.
+  - `Events()` / `EventList()` / `EventCard()` / `EventsSkeleton()` —
+    `id="events"` section: upcoming + past, each rendered as a card grid
+    (`EventCard`, accent-red for upcoming / muted for past), not a list.
+    Type `EventRow`.
   - `Overview()` / `OverviewSkeleton()` — `id="overview"` section: sync
     status, "Active members" `StatCard`, recent results (via `getOverview`).
   - `Standings()` / `StandingsSkeleton()` — `id="standings"` section: full
     standings table (via `getStandings`).
-  - `Events()` / `EventList()` / `EventsSkeleton()` — `id="events"` section:
-    upcoming + past lists (via `getUpcomingEvents`/`getPastEvents`). Type `EventRow`.
   - `ClosingCta()` — final CTA band.
   Nav anchors (`#overview`, `#standings`, `#events`) scroll to these; each
   section has `scroll-mt-20` so the sticky header doesn't cover its heading.
@@ -72,8 +78,7 @@ structural change (new files, renamed exports, moved routes).
   Type `StandingRow`.
 - `data/events.ts` — `getUpcomingEvents()`, `getPastEvents()` — used by the
   `#events` section.
-- `data/landing.ts` — `getLandingStats()` (counts for the hero stat strip),
-  `getFeaturedUpcomingEvents()` (top 3, for the landing teaser).
+- `data/landing.ts` — `getLandingStats()`: counts for the hero stat strip.
 - `ingestion/types.ts` — the normalized ingestion contract: `RawMember`,
   `RawEvent`, `RawResult`, `CommunitySnapshot`, `CommunitySource`. Any new
   data source must produce these shapes.

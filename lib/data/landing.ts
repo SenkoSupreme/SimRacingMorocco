@@ -10,12 +10,3 @@ export async function getLandingStats() {
 
   return { memberCount, eventsRun, upcomingCount, raceEntries };
 }
-
-export async function getFeaturedUpcomingEvents() {
-  return db.event.findMany({
-    where: { status: "SCHEDULED", startAt: { gte: new Date() } },
-    orderBy: { startAt: "asc" },
-    take: 3,
-    include: { sim: true },
-  });
-}
