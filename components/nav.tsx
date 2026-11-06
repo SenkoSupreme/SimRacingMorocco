@@ -3,18 +3,18 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import logo from "@/public/brand/srm-logo.jpg";
 import { DISCORD_URL } from "@/lib/constants";
 
+// Dashboards live as sections on the home page, not separate routes — these
+// are same-page anchor jumps.
 const links = [
-  { href: "/overview", label: "Overview" },
-  { href: "/standings", label: "Standings" },
-  { href: "/events", label: "Events" },
+  { href: "#overview", label: "Overview" },
+  { href: "#standings", label: "Standings" },
+  { href: "#events", label: "Events" },
 ];
 
 export function Nav() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,7 +37,7 @@ export function Nav() {
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-5 text-sm">
           {links.map((link) => (
-            <NavLink key={link.href} href={link.href} active={pathname === link.href}>
+            <NavLink key={link.href} href={link.href}>
               {link.label}
             </NavLink>
           ))}
@@ -64,13 +64,7 @@ export function Nav() {
       {open && (
         <nav className="sm:hidden border-t border-border px-4 pb-4 flex flex-col gap-1">
           {links.map((link) => (
-            <NavLink
-              key={link.href}
-              href={link.href}
-              active={pathname === link.href}
-              mobile
-              onClick={() => setOpen(false)}
-            >
+            <NavLink key={link.href} href={link.href} mobile onClick={() => setOpen(false)}>
               {link.label}
             </NavLink>
           ))}
@@ -89,13 +83,11 @@ export function Nav() {
 
 function NavLink({
   href,
-  active,
   mobile,
   onClick,
   children,
 }: {
   href: string;
-  active: boolean;
   mobile?: boolean;
   onClick?: () => void;
   children: React.ReactNode;
@@ -104,12 +96,7 @@ function NavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={
-        (mobile ? "py-2.5 " : "") +
-        (active
-          ? "text-foreground font-medium"
-          : "text-muted hover:text-foreground transition-colors")
-      }
+      className={`${mobile ? "py-2.5 " : ""}text-muted hover:text-foreground transition-colors`}
     >
       {children}
     </Link>

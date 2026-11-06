@@ -37,6 +37,18 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Dashboards live as anchor sections on one page now — smooth-scroll the
+   nav jumps, but not for anyone who asked for less motion. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Pitwall grid texture: a faint technical grid behind hero/CTA sections,
    like a telemetry readout. Drawn on a ::before layer (not the element's
    own background) so its fade mask never touches real content — the host

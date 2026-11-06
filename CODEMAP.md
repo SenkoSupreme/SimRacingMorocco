@@ -10,31 +10,36 @@ structural change (new files, renamed exports, moved routes).
 - `app/layout.tsx` — `RootLayout({children})` (default export): html shell,
   loads Geist Sans/Mono + Rajdhani (`--font-display`) fonts, renders
   `<Nav/>` + footer. Also exports `metadata`, `viewport` (theme-color).
-- `app/page.tsx` — Landing page, route `/`. Default `LandingPage()`.
-  Internal: `Hero()` (cockpit bg image, live badge, headline, CTAs),
-  `Stats()` / `StatStripSkeleton()` (stat strip via `getLandingStats`),
-  `EventsTeaser()` / `EventsTeaserSkeleton()` (via `getFeaturedUpcomingEvents`),
-  `Capabilities()` (3 `CapabilityCard`s with images), `ClosingCta()`.
-- `app/overview/page.tsx` — route `/overview`. Default `Page()`: renders
-  `<PageBanner>` + `<Overview/>`. Internal: `Overview()` (async, calls
-  `getOverview`), `OverviewSkeleton()`.
-- `app/standings/page.tsx` — route `/standings`. Default `StandingsPage()`.
-  Internal: `Standings()` (async, calls `getStandings`), `StandingsSkeleton()`.
-- `app/events/page.tsx` — route `/events`. Default `EventsPage()`. Internal:
-  `Events()` (async, `getUpcomingEvents` + `getPastEvents`), `EventList()`
-  (shared renderer for both lists), `EventsSkeleton()`. Type `EventRow`.
+- `app/page.tsx` — Everything lives on `/` now; the dashboards are sections
+  of this one page, not separate routes. Default `LandingPage()`. Internal:
+  - `Hero()` — cockpit bg image, live badge, headline, CTAs.
+  - `Stats()` / `StatStripSkeleton()` — stat strip via `getLandingStats`.
+  - `Capabilities()` — 3 `CapabilityCard`s ("What SRM is"), with images.
+  - `SectionHeader()` — shared accent-bar + title + subtitle header, used
+    by the three dashboard sections below.
+  - `Overview()` / `OverviewSkeleton()` — `id="overview"` section: sync
+    status, "Active members" `StatCard`, recent results (via `getOverview`).
+  - `Standings()` / `StandingsSkeleton()` — `id="standings"` section: full
+    standings table (via `getStandings`).
+  - `Events()` / `EventList()` / `EventsSkeleton()` — `id="events"` section:
+    upcoming + past lists (via `getUpcomingEvents`/`getPastEvents`). Type `EventRow`.
+  - `ClosingCta()` — final CTA band.
+  Nav anchors (`#overview`, `#standings`, `#events`) scroll to these; each
+  section has `scroll-mt-20` so the sticky header doesn't cover its heading.
 - `app/api/sync/route.ts` — `POST()`: triggers `runSync()`. Not yet wired to
   a schedule (add Vercel Cron once `discordBotSource` is real).
 - `app/globals.css` — theme tokens (`--background`, `--surface`, `--accent`,
   `--positive`, `--border`, `--muted`, `--font-display`, etc.),
   `.pitwall-grid` texture (decorative `::before`, see its comment before
   reusing — don't apply the class to a content-bearing element directly),
-  `.glow-accent`, `.text-glow-accent`, `fade-up` keyframes / `.animate-fade-up`.
+  `.glow-accent`, `.text-glow-accent`, `fade-up` keyframes / `.animate-fade-up`,
+  smooth `html` scroll-behavior (reduced-motion guarded) for the nav anchors.
 
 ## Components (`components/`)
 
 - `nav.tsx` — `Nav()`: sticky header, logo + "Sim Racing Morocco" wordmark,
-  desktop links, mobile hamburger menu (client component, `useState`).
+  desktop links, mobile hamburger menu (client component, `useState`). Links
+  are same-page anchors (`#overview`/`#standings`/`#events`), not routes.
   Internal: `NavLink()`, `MenuIcon()`, `CloseIcon()`. Reads `DISCORD_URL`.
 - `stat-card.tsx` — `StatCard({label, value, sub?, icon?, accent?})`:
   dashboard stat tile, top accent bar, `CountUp` number, hover lift.
@@ -42,9 +47,6 @@ structural change (new files, renamed exports, moved routes).
   `CountUp`, `.pitwall-grid` texture.
 - `capability-card.tsx` — `CapabilityCard({index, label, title, icon, accent?, image?, children})`:
   landing "what SRM is" card; `image` renders as a darkened background photo.
-- `page-banner.tsx` — `PageBanner({image, title, subtitle})`: dashboard
-  masthead banner (bg image + gradient + page title), used by
-  overview/standings/events.
 - `sync-status.tsx` — `SyncStatus({lastSyncAt})`: "data updated Xm ago" dot
   indicator. Internal `relativeTime()`.
 - `reveal.tsx` — `Reveal({children, className?, delayMs?})`: client,
@@ -61,11 +63,15 @@ structural change (new files, renamed exports, moved routes).
 - `constants.ts` — `DISCORD_URL` — **placeholder `"#"`, needs the real
   invite link.**
 - `data/overview.ts` — `getOverview()`: member/active-member counts,
-  upcoming events, recent results, last successful sync — powers `/overview`.
+  upcoming events, recent results, last successful sync — powers the
+  `#overview` section (only `activeMemberCount`, `recentResults`, and
+  `lastSyncAt` are currently rendered there; `memberCount`/`upcomingEvents`
+  are also fetched but shown via the hero `Stats`/`#events` section instead).
 - `data/standings.ts` — `getStandings()`: aggregates `Result` rows per
   member into starts/wins/podiums/top5/fastestLaps/points, sorted by points.
   Type `StandingRow`.
-- `data/events.ts` — `getUpcomingEvents()`, `getPastEvents()` — used by `/events`.
+- `data/events.ts` — `getUpcomingEvents()`, `getPastEvents()` — used by the
+  `#events` section.
 - `data/landing.ts` — `getLandingStats()` (counts for the hero stat strip),
   `getFeaturedUpcomingEvents()` (top 3, for the landing teaser).
 - `ingestion/types.ts` — the normalized ingestion contract: `RawMember`,
@@ -99,10 +105,10 @@ structural change (new files, renamed exports, moved routes).
 ## Assets (`public/`)
 
 - `brand/srm-logo.jpg` — community logo, used in `nav.tsx`.
-- `images/cockpit.webp` — landing hero background + `/overview` banner.
-- `images/gt3-porsche-action.webp` — "Standings" capability card + `/standings` banner.
-- `images/gt3-bmw-action.webp` — "Events" capability card.
-- `images/e30-convoy.webp` — "Community" capability card + `/events` banner.
+- `images/cockpit.webp` — landing hero background.
+- `images/gt3-porsche-action.webp` — "Standings" capability card background.
+- `images/gt3-bmw-action.webp` — "Events" capability card background.
+- `images/e30-convoy.webp` — "Community" capability card background.
   **Licensing unverified on the last three** — they're in-sim screenshots
   showing real Porsche/BMW M Motorsport/WRT/Goodyear liveries and sponsor
   branding. Source/license unverified; using real team branding publicly

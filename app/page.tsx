@@ -3,10 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { getLandingStats, getFeaturedUpcomingEvents } from "@/lib/data/landing";
+import { getOverview } from "@/lib/data/overview";
+import { getStandings } from "@/lib/data/standings";
+import { getUpcomingEvents, getPastEvents } from "@/lib/data/events";
 import { StatStrip } from "@/components/stat-strip";
+import { StatCard } from "@/components/stat-card";
 import { CapabilityCard } from "@/components/capability-card";
+import { SyncStatus } from "@/components/sync-status";
 import { Reveal } from "@/components/reveal";
-import { FlagIcon, TrophyIcon, UsersIcon, CalendarIcon, PulseIcon } from "@/components/icons";
+import {
+  FlagIcon,
+  TrophyIcon,
+  UsersIcon,
+  CalendarIcon,
+  PulseIcon,
+} from "@/components/icons";
 import { DISCORD_URL } from "@/lib/constants";
 import cockpitImage from "@/public/images/cockpit.webp";
 import porscheAction from "@/public/images/gt3-porsche-action.webp";
@@ -20,10 +31,16 @@ export default function LandingPage() {
       <Suspense fallback={<StatStripSkeleton />}>
         <Stats />
       </Suspense>
-      <Suspense fallback={<EventsTeaserSkeleton />}>
-        <EventsTeaser />
-      </Suspense>
       <Capabilities />
+      <Suspense fallback={<OverviewSkeleton />}>
+        <Overview />
+      </Suspense>
+      <Suspense fallback={<StandingsSkeleton />}>
+        <Standings />
+      </Suspense>
+      <Suspense fallback={<EventsSkeleton />}>
+        <Events />
+      </Suspense>
       <ClosingCta />
     </div>
   );
@@ -90,7 +107,7 @@ function Hero() {
               Join the Discord
             </Link>
             <Link
-              href="/standings"
+              href="#standings"
               className="rounded-md border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-surface-raised transition-colors active:scale-95"
             >
               View Live Standings
@@ -122,77 +139,6 @@ async function Stats() {
 
 function StatStripSkeleton() {
   return <div className="h-24 border-y border-border bg-surface animate-pulse" />;
-}
-
-async function EventsTeaser() {
-  await connection();
-  const events = await getFeaturedUpcomingEvents();
-
-  return (
-    <section className="px-4 sm:px-6 py-16">
-      <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <div className="flex items-end justify-between gap-4 mb-6">
-            <div>
-              <div className="h-0.5 w-10 bg-accent mb-3" />
-              <h2 className="font-display text-3xl font-bold uppercase tracking-tight">
-                Races happening soon
-              </h2>
-            </div>
-            <Link
-              href="/events"
-              className="text-sm font-medium text-muted hover:text-foreground transition-colors shrink-0"
-            >
-              Browse all events &rarr;
-            </Link>
-          </div>
-        </Reveal>
-
-        {events.length === 0 ? (
-          <p className="text-sm text-muted">Nothing scheduled yet — check back soon.</p>
-        ) : (
-          <div className="grid sm:grid-cols-3 gap-4">
-            {events.map((event, i) => (
-              <Reveal key={event.id} delayMs={i * 80}>
-                <div className="group relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-300 hover:-translate-y-1 motion-safe:hover:shadow-[0_12px_40px_-14px_rgba(0,0,0,0.7)]">
-                  <div className="absolute inset-x-0 top-0 h-0.5 bg-accent scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs uppercase tracking-wide text-muted">
-                      {event.sim.name}
-                    </div>
-                    <FlagIcon className="text-accent opacity-70" />
-                  </div>
-                  <div className="mt-2 font-display text-lg font-semibold">{event.title}</div>
-                  {event.trackName && (
-                    <div className="mt-1 text-sm text-muted">{event.trackName}</div>
-                  )}
-                  <div className="mt-4 text-sm text-accent font-medium">
-                    {event.startAt.toLocaleDateString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function EventsTeaserSkeleton() {
-  return (
-    <section className="px-4 sm:px-6 py-16">
-      <div className="max-w-6xl mx-auto grid sm:grid-cols-3 gap-4 animate-pulse">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-32 rounded-lg border border-border bg-surface" />
-        ))}
-      </div>
-    </section>
-  );
 }
 
 function Capabilities() {
@@ -249,6 +195,259 @@ function Capabilities() {
   );
 }
 
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <Reveal>
+      <div className="h-0.5 w-10 bg-accent mb-3" />
+      <h2 className="font-display text-3xl font-bold uppercase tracking-tight">{title}</h2>
+      <p className="text-sm text-muted mt-1">{subtitle}</p>
+    </Reveal>
+  );
+}
+
+async function Overview() {
+  // This data changes between requests (member activity is relative to
+  // "now") and is cheap to compute, so render it at request time rather
+  // than caching it. See lib/data/overview.ts.
+  await connection();
+  const overview = await getOverview();
+
+  return (
+    <section id="overview" className="scroll-mt-20 px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <SectionHeader
+          title="Community Overview"
+          subtitle="Sim Racing Morocco — a live pulse on who's active and who just raced."
+        />
+        <SyncStatus lastSyncAt={overview.lastSyncAt} />
+
+        <div className="max-w-xs">
+          <StatCard
+            label="Active members"
+            value={overview.activeMemberCount}
+            sub={`last ${overview.activeWindowDays} days`}
+            icon={<PulseIcon />}
+            accent="positive"
+          />
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">
+            Recent results
+          </h3>
+          {overview.recentResults.length === 0 ? (
+            <p className="text-sm text-muted">No results recorded yet.</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+              {overview.recentResults.map((result) => (
+                <li
+                  key={result.id}
+                  className="px-4 py-3 flex items-center justify-between transition-colors hover:bg-surface-raised"
+                >
+                  <div className="flex items-center gap-3">
+                    <TrophyIcon className="text-muted shrink-0" />
+                    <div>
+                      <span className="font-medium">{result.member.displayName}</span>
+                      <span className="text-muted"> finished P{result.position} in </span>
+                      <span>{result.event.title}</span>
+                    </div>
+                  </div>
+                  {result.fastestLap && (
+                    <span className="text-xs text-accent font-medium shrink-0">Fastest lap</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <section className="px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+        <div className="h-3 w-40 bg-surface rounded" />
+        <div className="h-24 w-64 rounded-lg border border-border bg-surface" />
+        <div className="h-40 rounded-lg border border-border bg-surface" />
+      </div>
+    </section>
+  );
+}
+
+async function Standings() {
+  const rows = await getStandings();
+
+  return (
+    <section id="standings" className="scroll-mt-20 px-4 sm:px-6 py-16 bg-surface/40">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <SectionHeader
+          title="Standings"
+          subtitle="Across all completed events. Ratios matter as much as points."
+        />
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted">No completed events yet.</p>
+        ) : (
+          <Reveal>
+            <div className="relative overflow-hidden overflow-x-auto rounded-lg border border-border bg-surface">
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-accent" />
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-muted border-b border-border">
+                    <th className="px-4 py-3 font-medium">#</th>
+                    <th className="px-4 py-3 font-medium">Driver</th>
+                    <th className="px-4 py-3 font-medium text-right">Starts</th>
+                    <th className="px-4 py-3 font-medium text-right">Wins</th>
+                    <th className="px-4 py-3 font-medium text-right">Podiums</th>
+                    <th className="px-4 py-3 font-medium text-right">Top 5</th>
+                    <th className="px-4 py-3 font-medium text-right">FL</th>
+                    <th className="px-4 py-3 font-medium text-right">Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => {
+                    const rank = i + 1;
+                    const podium = rank <= 3;
+                    return (
+                      <tr
+                        key={row.memberId}
+                        className="border-b border-border last:border-0 transition-colors hover:bg-surface-raised"
+                      >
+                        <td
+                          className={`px-4 py-3 tabular-nums ${podium ? "font-display text-lg font-bold text-accent" : "text-muted"}`}
+                        >
+                          {rank}
+                        </td>
+                        <td className="px-4 py-3 font-medium">{row.displayName}</td>
+                        <td className="px-4 py-3 text-right text-muted tabular-nums">{row.starts}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{row.wins}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{row.podiums}</td>
+                        <td className="px-4 py-3 text-right tabular-nums">{row.top5}</td>
+                        <td className="px-4 py-3 text-right text-accent tabular-nums">{row.fastestLaps}</td>
+                        <td className="px-4 py-3 text-right font-display font-bold tabular-nums">
+                          {row.points}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function StandingsSkeleton() {
+  return (
+    <section className="px-4 sm:px-6 py-16 bg-surface/40">
+      <div className="max-w-6xl mx-auto h-80 rounded-lg border border-border bg-surface animate-pulse" />
+    </section>
+  );
+}
+
+type EventRow = {
+  id: string;
+  title: string;
+  trackName: string | null;
+  startAt: Date;
+  sim: { name: string };
+  results: { id: string }[];
+};
+
+async function Events() {
+  // "Upcoming" is relative to request time, so this section renders at
+  // request time rather than being cached — see the Overview comment above.
+  await connection();
+  const [upcoming, past] = await Promise.all([getUpcomingEvents(), getPastEvents()]);
+
+  return (
+    <section id="events" className="scroll-mt-20 px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <SectionHeader title="Events" subtitle="Upcoming and past community races." />
+        <EventList
+          title="Upcoming"
+          events={upcoming}
+          emptyText="Nothing scheduled yet."
+          icon={<CalendarIcon className="text-accent shrink-0" />}
+        />
+        <EventList
+          title="Past"
+          events={past}
+          emptyText="No past events recorded yet."
+          icon={<FlagIcon className="text-muted shrink-0" />}
+        />
+      </div>
+    </section>
+  );
+}
+
+function EventList({
+  title,
+  events,
+  emptyText,
+  icon,
+}: {
+  title: string;
+  events: EventRow[];
+  emptyText: string;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted mb-3">{title}</h3>
+      {events.length === 0 ? (
+        <p className="text-sm text-muted">{emptyText}</p>
+      ) : (
+        <Reveal>
+          <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+            {events.map((event) => (
+              <li
+                key={event.id}
+                className="px-4 py-3 flex items-center justify-between gap-4 transition-colors hover:bg-surface-raised"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {icon}
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{event.title}</div>
+                    <div className="text-xs text-muted truncate">
+                      {event.sim.name}
+                      {event.trackName ? ` — ${event.trackName}` : ""}
+                      {event.results.length > 0 ? ` — ${event.results.length} entrants` : ""}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-muted tabular-nums shrink-0">
+                  {event.startAt.toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      )}
+    </div>
+  );
+}
+
+function EventsSkeleton() {
+  return (
+    <section className="px-4 sm:px-6 py-16">
+      <div className="max-w-6xl mx-auto space-y-8 animate-pulse">
+        <div className="h-32 rounded-lg border border-border bg-surface" />
+        <div className="h-32 rounded-lg border border-border bg-surface" />
+      </div>
+    </section>
+  );
+}
+
 function ClosingCta() {
   return (
     <section
@@ -274,7 +473,7 @@ function ClosingCta() {
             Join the Discord
           </Link>
           <Link
-            href="/overview"
+            href="#overview"
             className="rounded-md border border-border px-6 py-3 text-sm font-semibold text-foreground hover:bg-surface-raised transition-colors active:scale-95"
           >
             See the Community
